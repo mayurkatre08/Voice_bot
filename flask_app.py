@@ -16,6 +16,7 @@ load_dotenv()
 
 # Print the environment variable
 SECRET_KEY = os.getenv("MY_KEY")  # Ensure "MY_KEY" is in your .env file
+print(SECRET_KEY)
 
 app = Flask(__name__)
 
