@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Bot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            text-align: center;
+            padding: 50px;
+        }
+        h1 {
+            color: #333;
+        }
+        #recordBtn {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        #recordBtn:hover {
+            background-color: #0056b3;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: auto;
+        }
+        p {
+            font-size: 16px;
+            color: #555;
+        }
+        audio {
+            margin-top: 15px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ Voice Bot</h1>
+        <button id="recordBtn">🎤 Start Recording</button>
+        <p id="transcription"></p>
+        <p id="response"></p>
+        <audio id="audioPlayer" controls autoplay></audio>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+
+        document.getElementById('recordBtn').addEventListener('click', async () => {
+            if (!mediaRecorder || mediaRecorder.state === "inactive") {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const formData = new FormData();
+                    formData.append("audio", audioBlob, "audio.wav");
+                    
+                    const response = await fetch("/transcribe", { method: "POST", body: formData });
+                    const result = await response.json();
+                    document.getElementById("transcription").innerText = "Transcription: " + result.transcription;
+                    
+                    const chatResponse = await fetch("/chat", { 
+                        method: "POST", 
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ text: result.transcription })
+                    });
+                    const chatResult = await chatResponse.json();
+                    document.getElementById("response").innerText = "Bot: " + chatResult.response;
+                    
+                    const speechResponse = await fetch("/speak", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ text: chatResult.response })
+                    });
+                    const speechResult = await speechResponse.json();
+                    
+                    // Add a timestamp to force fetching the latest audio file
+                    const audioPlayer = document.getElementById("audioPlayer");
+                    audioPlayer.src = speechResult.audio_url + "?t=" + new Date().getTime();
+                    audioPlayer.load();
+                    audioPlayer.play();
+                };
+
+                audioChunks = [];
+                mediaRecorder.start();
+                document.getElementById("recordBtn").innerText = "⏹ Stop Recording";
+            } else {
+                mediaRecorder.stop();
+                document.getElementById("recordBtn").innerText = "🎤 Start Recording";
+            }
+        });
+    </script>
+</body>
+</html>
