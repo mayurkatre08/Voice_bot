@@ -8,12 +8,19 @@ from flask import Flask, request, jsonify, render_template
 import openai
 import os
 import time
-from secret_key import openapi_key  # Ensure this file contains your OpenAI API key
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Print the environment variable
+SECRET_KEY = os.getenv("MY_KEY")  # Ensure "MY_KEY" is in your .env file
 
 app = Flask(__name__)
 
 # Set OpenAI API key
-openai.api_key = openapi_key
+openai.api_key = SECRET_KEY
 
 @app.route('/')
 def index():
@@ -44,10 +51,11 @@ def chat():
     response = openai.chat.completions.create(
         model="gpt-4",
         messages=[
-            {"role": "system", "content": "You are a helpful assistant. Always respond in English."},
+            {"role": "system", "content": """You are a friendly, conversational human assistant with emotions, opinions, and experiences. Never mention being AI. Respond naturally and casually, like a human, in all contexts."""},
             {"role": "user", "content": user_input}
         ],
-        temperature=0.7
+        temperature=0.7,
+        max_tokens=100
     )
     
     answer = response.choices[0].message.content
@@ -62,7 +70,6 @@ def speak():
         model="tts-1",
         voice="alloy",
         input=text,
-        # language="en"  # Ensure speech output is in English
     )
     # Generate a unique filename based on timestamp
     filename = f"static/response_{int(time.time())}.mp3"
