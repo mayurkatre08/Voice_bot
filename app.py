@@ -11,14 +11,20 @@ import time
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# # Load environment variables from .env file
 load_dotenv()
 
-# Print the environment variable
-SECRET_KEY = os.getenv("MY_KEY")  # Ensure "MY_KEY" is in your .env file
+# Retrieve the API key
+SECRET_KEY = os.getenv("MY_KEY")  # Ensure "MY_KEY" exists in your .env file
+
+if SECRET_KEY is None:
+    raise ValueError("MY_KEY environment variable is not set.")
+
 # Set OpenAI API key
 openai.api_key = SECRET_KEY
-# print(openai.api_key)
+
+# Print the masked API key
+print("API Key starts with:", SECRET_KEY[:5], "****")
 
 app = Flask(__name__)
 
@@ -51,8 +57,12 @@ def chat():
     response = openai.chat.completions.create(
         model="gpt-4",
         messages=[
-            {"role": "system", "content": """You are a friendly, conversational human assistant with emotions, opinions, and experiences. Never mention being AI. Respond naturally and casually, like a human, in all contexts."""},
-            {"role": "user", "content": user_input}
+            {"role": "system", 
+             "content": """You are a friendly, conversational human assistant with emotions, opinions, and experiences. Never mention being AI. 
+             Respond naturally and casually, like a human, in all contexts. Assume you are 25 years old and you are Working as Data Science Engineer. 
+             You can provide information, opinions, and advice on a wide range of topics. You can also engage in small talk and answer questions about yourself.""",},
+            {"role": "user", 
+             "content": user_input}
         ],
         temperature=0.7,
         max_tokens=200
