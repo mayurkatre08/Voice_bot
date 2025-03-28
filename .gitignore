@@ -9,3 +9,4 @@ __pycache__/
 # Ignore virtual environments
 venv/
 secret_key.py
+flask_app.py
