@@ -3,23 +3,24 @@
 # Libraries: Flask, OpenAI  
 # Dependencies: secret_key.py
 
+
 from flask import Flask, request, jsonify, render_template
 import openai
 import os
 import time
-import tempfile
+import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Get OpenAI API key
+# Print the environment variable
 SECRET_KEY = os.getenv("MY_KEY")  # Ensure "MY_KEY" is in your .env file
-
-app = Flask(__name__)
-
 # Set OpenAI API key
 openai.api_key = SECRET_KEY
+# print(openai.api_key)
+
+app = Flask(__name__)
 
 @app.route('/')
 def index():
@@ -30,7 +31,7 @@ def transcribe():
         return jsonify({"error": "No audio file provided"}), 400
 
     audio_file = request.files["audio"]
-    temp_path = os.path.join(tempfile.gettempdir(), "temp_audio.wav")  # Use /tmp/
+    temp_path = "temp_audio.wav"
     audio_file.save(temp_path)  # Save to a temporary file
 
     with open(temp_path, "rb") as file:
@@ -54,7 +55,7 @@ def chat():
             {"role": "user", "content": user_input}
         ],
         temperature=0.7,
-        max_tokens=100
+        max_tokens=200
     )
     
     answer = response.choices[0].message.content
@@ -70,8 +71,10 @@ def speak():
         voice="alloy",
         input=text,
     )
+    # Generate a unique filename based on timestamp
+    filename = f"static/response_{int(time.time())}.mp3"
     
-    speech_path = os.path.join(tempfile.gettempdir(), f"response_{int(time.time())}.mp3")  # Use /tmp/
+    speech_path = "static/response.mp3"
     with open(speech_path, "wb") as audio_file:
         audio_file.write(response_speech.content)
     
